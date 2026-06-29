@@ -8,6 +8,7 @@ import {
 import { AuthService } from "./auth.service";
 
 import { RegisterInput } from "./dto/register.input";
+import { LoginInput } from "./dto/login.input";
 import { AuthPayload } from "./dto/auth-payload.model";
 import { AvailabilityResponse } from "./dto/availability-response.model";
 
@@ -16,7 +17,7 @@ export class AuthResolver {
   constructor(
     private readonly authService: AuthService,
   ) {}
-
+  //register 
   @Mutation(() => AuthPayload)
   async register(
     @Args("input") input: RegisterInput,
@@ -36,5 +37,14 @@ export class AuthResolver {
     @Args("email") email: string,
   ): Promise<AvailabilityResponse> {
     return this.authService.checkEmailAvailability(email);
+  }
+
+
+  //login
+  @Mutation(() => AuthPayload)
+  async login(
+    @Args("input") input: LoginInput,
+  ): Promise<AuthPayload> {
+    return this.authService.login(input);
   }
 }

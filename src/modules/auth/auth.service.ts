@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from "@nestjs/common";
+import { Injectable, ConflictException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as argon2 from "argon2";
 import { PrismaService } from "../../database/prisma.service";
@@ -6,8 +6,9 @@ import { RegisterInput } from "./dto/register.input";
 import { LoginInput } from "./dto/login.input";
 import { AuthPayload } from "./dto/auth-payload.model";
 import { env } from "../../config/env"
-import { User, Profile } from "@prisma/client";
+import { User, Profile, Prisma } from "@prisma/client";
 import { UserModel } from "../user/models/user.model";
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -28,7 +29,6 @@ export class AuthService {
             sessionId,
         });
     }
-
     private generateRefreshToken(
         userId: string,
         sessionId: string,
@@ -44,20 +44,19 @@ export class AuthService {
             },
         );
     }
-
     private async hashRefreshToken(
         refreshToken: string,
     ): Promise<string> {
         return argon2.hash(refreshToken);
     }
-
-
     private async createSession(
+        prisma: PrismaService | Prisma.TransactionClient,
         userId: string,
     ) {
-        return this.prisma.session.create({
+        return prisma.session.create({
             data: {
                 userId,
+                refreshTokenHash: "",
                 expiresAt: new Date(
                     Date.now() +
                     1000 * 60 * 60 * 24 * 30,
@@ -65,7 +64,6 @@ export class AuthService {
             },
         });
     }
-
     private async ensureUniqueUser(
         email: string,
         username: string,
@@ -97,7 +95,6 @@ export class AuthService {
             );
         }
     }
-
     private async updateSessionRefreshToken(
         sessionId: string,
         refreshToken: string,
@@ -117,7 +114,6 @@ export class AuthService {
             },
         });
     }
-
     private async createAccount(
         input: RegisterInput,
         passwordHash: string,
@@ -143,15 +139,10 @@ export class AuthService {
                 },
             });
 
-            const session = await tx.session.create({
-                data: {
-                    userId: user.id,
-                    refreshTokenHash: "", // temporary until token is generated
-                    expiresAt: new Date(
-                        Date.now() + 1000 * 60 * 60 * 24 * 30,
-                    ),
-                },
-            });
+            const session = await this.createSession(
+                tx,
+                user.id,
+            );
 
             return {
                 user,
@@ -179,7 +170,6 @@ export class AuthService {
     ): Promise<string> {
         return argon2.hash(password);
     }
-
     private async verifyPassword(
         password: string,
         passwordHash: string,
@@ -189,6 +179,30 @@ export class AuthService {
             password,
         );
     }
+    private async findUserByIdentifier(
+        identifier: string,
+    ) {
+        return this.prisma.user.findFirst({
+            where: {
+                OR: [
+                    {
+                        emailLower: identifier.toLowerCase(),
+                    },
+                    {
+                        usernameLower: identifier.toLowerCase(),
+                    },
+                ],
+            },
+            include: {
+                profile: true,
+            },
+        });
+    }
+
+
+
+
+
     async register(
         input: RegisterInput,
     ): Promise<AuthPayload> {
@@ -269,9 +283,62 @@ export class AuthService {
     }
 
 
-    // async login(
-    //     input: LoginInput,
-    // ): Promise<AuthPayload> { }
+    async login(
+        input: LoginInput,
+    ): Promise<AuthPayload> {
+        const user = await this.findUserByIdentifier(
+            input.identifier,
+        );
+
+        if (!user || !user.passwordHash) {
+            throw new UnauthorizedException(
+                "Invalid credentials.",
+            )
+        }
+        const isPasswordValid = await this.verifyPassword(
+            input.password,
+            user.passwordHash,
+        );
+        if (!isPasswordValid) {
+            throw new UnauthorizedException(
+                "Invalid credentials.",
+            );
+        }
+        const session = await this.createSession(
+            this.prisma,
+            user.id,
+        );
+
+        const accessToken = this.generateAccessToken(
+            user.id,
+            session.id,
+        );
+
+        const refreshToken = this.generateRefreshToken(
+            user.id,
+            session.id,
+        );
+
+        await this.updateSessionRefreshToken(
+            session.id,
+            refreshToken,
+        );
+        if (!user.profile) {
+            throw new UnauthorizedException(
+                "User profile not found.",
+            );
+        }
+        return {
+            accessToken,
+            refreshToken,
+            user: this.toUserModel(
+                user,
+                user.profile,
+            ),
+        };
+
+
+    }
 
     // async refreshToken(
     //     refreshToken: string,
