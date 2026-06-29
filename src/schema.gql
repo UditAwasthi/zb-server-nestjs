@@ -1,0 +1,49 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  user: UserModel!
+}
+
+type AvailabilityResponse {
+  available: Boolean!
+  message: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Mutation {
+  register(input: RegisterInput!): AuthPayload!
+}
+
+type Query {
+  checkEmailAvailability(email: String!): AvailabilityResponse!
+  checkUsernameAvailability(username: String!): AvailabilityResponse!
+  hello: String!
+}
+
+input RegisterInput {
+  dateOfBirth: DateTime!
+  email: String!
+  fullName: String!
+  password: String!
+  username: String!
+}
+
+type UserModel {
+  avatarUrl: String
+  bio: String
+  createdAt: DateTime!
+  email: String!
+  emailVerified: Boolean!
+  fullName: String!
+  id: ID!
+  updatedAt: DateTime!
+  username: String!
+}
