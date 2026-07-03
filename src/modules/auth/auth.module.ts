@@ -8,6 +8,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { PrismaModule } from "../../database/prisma.module";
 
 import { env } from "../../config/env";
+import { EmailModule } from "../email/email.module";
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { env } from "../../config/env";
         expiresIn: env.ACCESS_TOKEN_EXPIRES_IN as any,
       },
     }),
+    EmailModule,
   ],
 
   providers: [
