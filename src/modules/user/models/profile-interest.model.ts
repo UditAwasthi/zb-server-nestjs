@@ -1,16 +1,16 @@
-import { Field, ObjectType } from "@nestjs/graphql";
+import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class InterestModel {
-    @Field()
-    id!: string;
+  @Field()
+  id!: string;
 
-    @Field()
-    name!: string;
+  @Field()
+  name!: string;
 }
 
 @ObjectType()
 export class ProfileInterestModel {
-    @Field(() => InterestModel)
-    interest!: InterestModel;
+  @Field(() => InterestModel)
+  interest!: InterestModel;
 }

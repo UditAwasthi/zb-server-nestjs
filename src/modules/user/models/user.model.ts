@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from "@nestjs/graphql";
+import { Field, ID, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class UserModel {
@@ -19,7 +19,6 @@ export class UserModel {
 
   @Field({ nullable: true })
   bio?: string;
-
 
   @Field()
   emailVerified!: boolean;

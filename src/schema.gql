@@ -20,6 +20,16 @@ enum AccountType {
   PERSONAL
 }
 
+input AddInterestInput {
+  interestId: String!
+}
+
+input AddProfileLinkInput {
+  displayOrder: Int
+  label: String!
+  url: String!
+}
+
 type AuthPayload {
   accessToken: String!
   refreshToken: String!
@@ -35,6 +45,12 @@ enum AuthProvider {
 type AvailabilityResponse {
   available: Boolean!
   message: String!
+}
+
+type AvatarUploadUrlResponse {
+  avatarKey: String!
+  publicUrl: String!
+  uploadUrl: String!
 }
 
 """
@@ -87,15 +103,28 @@ enum MessagePermission {
 }
 
 type Mutation {
+  addInterest(input: AddInterestInput!): ProfileInterestModel!
+  addProfileLink(input: AddProfileLinkInput!): ProfileLinkModel!
+  deleteAvatar: Boolean!
+  deleteProfileLink(id: String!): Boolean!
   forgotPassword(input: ForgotPasswordInput!): Boolean!
+  generateAvatarUploadUrl: AvatarUploadUrlResponse!
   googleLogin(input: GoogleLoginInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   logout: Boolean!
   logoutAllDevices: Boolean!
   refreshToken(input: RefreshTokenInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
+  removeInterest(interestId: String!): Boolean!
+  reorderProfileLinks(input: ReorderProfileLinksInput!): [ProfileLinkModel!]!
   resendVerificationEmail: Boolean!
   resetPassword(input: ResetPasswordInput!): Boolean!
+  updateAvatar(input: UpdateAvatarInput!): UserModel!
+  updateBasicProfile(input: UpdateBasicProfileInput!): ProfileModel!
+  updateNotificationSettings(input: UpdateNotificationSettingsInput!): NotificationSettingsModel!
+  updatePrivacySettings(input: UpdatePrivacySettingsInput!): PrivacySettingsModel!
+  updateProfessionalIdentity(input: UpdateProfessionalIdentityInput!): ProfessionalIdentityModel!
+  updateProfileLink(input: UpdateProfileLinkInput!): ProfileLinkModel!
   verifyEmail(input: VerifyEmailInput!): Boolean!
 }
 
@@ -146,6 +175,7 @@ type ProfileLinkModel {
 
 type ProfileModel {
   accountType: AccountType!
+  bio: String
   dateOfBirth: DateTime
   followerCount: Int!
   followingCount: Int!
@@ -189,10 +219,61 @@ input RegisterInput {
   username: String!
 }
 
+input ReorderProfileLinksInput {
+  linkIds: [String!]!
+}
+
 input ResetPasswordInput {
   email: String!
   otp: String!
   password: String!
+}
+
+input UpdateAvatarInput {
+  avatarKey: String!
+  avatarUrl: String!
+}
+
+input UpdateBasicProfileInput {
+  accountType: AccountType
+  bio: String
+  dateOfBirth: DateTime
+  fullName: String
+  location: String
+  niche: Niche
+  profileMusicUrl: String
+  pronouns: Pronouns
+  showInGlobalSearch: Boolean
+}
+
+input UpdateNotificationSettingsInput {
+  comments: Boolean
+  communityAnnouncements: Boolean
+  communityPosts: Boolean
+  directMessages: Boolean
+  groupMessages: Boolean
+  likes: Boolean
+  mentions: Boolean
+  newFollowers: Boolean
+}
+
+input UpdatePrivacySettingsInput {
+  accountPrivacy: AccountPrivacy
+  messagePermission: MessagePermission
+}
+
+input UpdateProfessionalIdentityInput {
+  company: String
+  currentRole: String
+  highestEducation: String
+  industry: String
+}
+
+input UpdateProfileLinkInput {
+  displayOrder: Int
+  id: String!
+  label: String
+  url: String
 }
 
 type UserModel {

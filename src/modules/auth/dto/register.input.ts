@@ -1,13 +1,6 @@
-import { Field, InputType } from "@nestjs/graphql";
-import {
-  IsDate,
-  IsEmail,
-  IsString,
-  Length,
-  MinLength,
-} from "class-validator";
-import { Type } from "class-transformer";
-
+import { Field, InputType } from '@nestjs/graphql';
+import { IsDate, IsEmail, IsString, Length, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
 
 @InputType()
 export class RegisterInput {

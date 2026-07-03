@@ -1,8 +1,8 @@
-import { registerEnumType } from "@nestjs/graphql";
-import { AccountStatus } from "@prisma/client";
+import { registerEnumType } from '@nestjs/graphql';
+import { AccountStatus } from '@prisma/client';
 
 registerEnumType(AccountStatus, {
-    name: "AccountStatus",
+  name: 'AccountStatus',
 });
 
 export { AccountStatus };

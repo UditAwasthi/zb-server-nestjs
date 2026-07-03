@@ -1,22 +1,16 @@
-import { Injectable } from "@nestjs/common";
-import { resend } from "../../lib/resend";
-import { env } from "../../config/env";
+import { Injectable } from '@nestjs/common';
+import { resend } from '../../lib/resend';
+import { env } from '../../config/env';
 @Injectable()
 export class EmailService {
+  async sendVerificationEmail(email: string, otp: string): Promise<void> {
+    try {
+      const result = await resend.emails.send({
+        from: env.EMAIL_FROM,
+        to: email,
+        subject: 'Verify Your Email',
 
-    async sendVerificationEmail(
-        email: string,
-        otp: string
-    ): Promise<void> {
-      try{
-        const result =
-            await resend.emails.send({
-                from: env.EMAIL_FROM,
-                to: email,
-                subject:
-                    "Verify Your Email",
-
-                html: `
+        html: `
 <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 420px; margin: 40px auto; padding: 32px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
 
   <!-- Zynon Connected People Vector Art (Blue Theme for Verification) -->
@@ -82,27 +76,20 @@ export class EmailService {
 
 </div>
 `,
-            });
-         console.log("Email sent:", result);
-          }
-          catch (error) {
-            console.error("Error sending email:", error);
-          }
-        
+      });
+      console.log('Email sent:', result);
+    } catch (error) {
+      console.error('Error sending email:', error);
     }
+  }
 
-    async sendPasswordResetEmail(
-        email: string,
-        otp: string
-    ): Promise<void> {
-        const result =
-            await resend.emails.send({
-                from: env.EMAIL_FROM,
-                to: email,
-                subject:
-                    "Reset Your Password",
+  async sendPasswordResetEmail(email: string, otp: string): Promise<void> {
+    const result = await resend.emails.send({
+      from: env.EMAIL_FROM,
+      to: email,
+      subject: 'Reset Your Password',
 
-                html: `
+      html: `
 <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 420px; margin: 40px auto; padding: 32px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);">
 
   <!-- Zynon Connected People Vector Art -->
@@ -167,11 +154,7 @@ export class EmailService {
   </p>
 
 </div>
-`
-            });
-
-
-
-     
-    }
+`,
+    });
+  }
 }

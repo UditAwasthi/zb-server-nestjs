@@ -19,7 +19,6 @@ model User {
   accountStatus        AccountStatus         @default(ACTIVE)
   role                 UserRole              @default(USER)
   avatarUrl            String?
-  bio                  String?               @db.VarChar(280)
   onboardingCompleted  Boolean               @default(false)
   emailVerifiedAt      DateTime?
   fcmToken             String?
@@ -107,6 +106,7 @@ model Profile {
   dateOfBirth          DateTime?
   pronouns             Pronouns?
   location             String?               @db.VarChar(100)
+  bio                  String?               @db.VarChar(280)
   accountType          AccountType           @default(PERSONAL)
   niche                Niche?
   profileMusicUrl      String?

@@ -1,8 +1,8 @@
-import "dotenv/config";
-import { z } from "zod";
+import 'dotenv/config';
+import { z } from 'zod';
 
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
 
   PORT: z.coerce.number().int().positive(),
 
@@ -12,7 +12,7 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(5),
 
   ACCESS_TOKEN_EXPIRES_IN: z.custom<`${number}${string}`>(),
-REFRESH_TOKEN_EXPIRES_IN: z.custom<`${number}${string}`>(),
+  REFRESH_TOKEN_EXPIRES_IN: z.custom<`${number}${string}`>(),
 
   RESEND_API_KEY: z.string(),
 
