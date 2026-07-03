@@ -19,7 +19,9 @@ import { User, Profile, Prisma, Session, VerificationToken } from "@prisma/clien
 import { UserModel } from "../user/models/user.model";
 import { EmailService } from "../email/email.service";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-
+import { MeModel } from "../user/models/me.model";
+import { ProfileModel } from "../user/models/profile.model";
+import { NotificationSettingsModel } from "../user/models/notification-settings.model";
 // ==========================
 // Constants
 // ==========================
@@ -54,10 +56,26 @@ type SessionWithUserProfile = Prisma.SessionGetPayload<{
 // `select` instead of always fetching the full row (e.g. passwordHash).
 type UserForModel = Pick<
     User,
-    "id" | "username" | "email" | "emailVerifiedAt" | "createdAt" | "updatedAt"
+    "id" | "bio" | "avatarUrl" | "username" | "email" | "emailVerifiedAt" | "createdAt" | "updatedAt"
 >;
 type ProfileForModel = Pick<Profile, "fullName">;
-
+type UserForMeModel = Prisma.UserGetPayload<{
+    include: {
+        profile: {
+            include: {
+                privacySettings: true;
+                professionalIdentity: true;
+                profileLinks: true;
+                profileInterests: {
+                    include: {
+                        interest: true;
+                    };
+                };
+            };
+        };
+        notificationSettings: true;
+    };
+}>;
 @Injectable()
 export class AuthService {
     constructor(
@@ -216,12 +234,132 @@ export class AuthService {
             username: user.username,
             email: user.email,
             fullName: profile.fullName,
+            bio: user.bio || undefined,
+            avatarUrl: user.avatarUrl || undefined,
             emailVerified: user.emailVerifiedAt !== null,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         };
     }
+    private toMeModel(
+        user: UserForMeModel,
+    ): MeModel {
+        return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
 
+            fullName: user.profile!.fullName,
+
+            bio: user.bio ?? undefined,
+            avatarUrl: user.avatarUrl ?? undefined,
+
+            emailVerified:
+                user.emailVerifiedAt !== null,
+
+            onboardingCompleted:
+                user.onboardingCompleted,
+
+            authProvider:
+                user.authProvider,
+
+            accountStatus:
+                user.accountStatus,
+
+            role:
+                user.role,
+
+            twoFactorEnabled:
+                user.twoFactorEnabled,
+
+            createdAt:
+                user.createdAt,
+
+            updatedAt:
+                user.updatedAt,
+
+            profile:
+                this.toProfileModel(user.profile),
+
+            notificationSettings:
+                this.toNotificationSettingsModel(
+                    user.notificationSettings,
+                ),
+        };
+    }
+
+
+    private toProfileModel(
+        profile: UserForMeModel["profile"],
+    ): ProfileModel {
+        return {
+            id: profile!.id,
+            fullName: profile!.fullName,
+            dateOfBirth: profile!.dateOfBirth ?? undefined,
+            pronouns: profile!.pronouns ?? undefined,
+            location: profile!.location ?? undefined,
+
+            accountType: profile!.accountType,
+            niche: profile!.niche ?? undefined,
+
+            profileMusicUrl:
+                profile!.profileMusicUrl ?? undefined,
+
+            showInGlobalSearch:
+                profile!.showInGlobalSearch,
+
+            followerCount:
+                profile!.followerCount,
+
+            followingCount:
+                profile!.followingCount,
+
+            postCount:
+                profile!.postCount,
+
+            privacySettings:
+                profile!.privacySettings ?? undefined,
+
+            professionalIdentity:
+                profile!.professionalIdentity
+                    ? {
+                        currentRole:
+                            profile!.professionalIdentity.currentRole ?? undefined,
+                        company:
+                            profile!.professionalIdentity.company ?? undefined,
+                        industry:
+                            profile!.professionalIdentity.industry ?? undefined,
+                        highestEducation:
+                            profile!.professionalIdentity.highestEducation ?? undefined,
+                    }
+                    : undefined,
+            profileLinks:
+                profile!.profileLinks,
+
+            profileInterests:
+                profile!.profileInterests,
+        };
+    }
+
+    
+    private toNotificationSettingsModel(
+        settings: UserForMeModel["notificationSettings"],
+    ): NotificationSettingsModel | undefined {
+        if (!settings) {
+            return undefined;
+        }
+
+        return {
+            likes: settings.likes,
+            comments: settings.comments,
+            mentions: settings.mentions,
+            newFollowers: settings.newFollowers,
+            directMessages: settings.directMessages,
+            groupMessages: settings.groupMessages,
+            communityPosts: settings.communityPosts,
+            communityAnnouncements: settings.communityAnnouncements,
+        };
+    }
     private async hashPassword(password: string): Promise<string> {
         return argon2.hash(password);
     }
@@ -592,27 +730,43 @@ export class AuthService {
         };
     }
 
-    async me(userId: string): Promise<UserModel> {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                emailVerifiedAt: true,
-                createdAt: true,
-                updatedAt: true,
-                profile: { select: { fullName: true } },
-            },
-        });
+    async me(
+        userId: string,
+    ): Promise<MeModel> {
+        const user =
+            await this.prisma.user.findUnique({
+                where: {
+                    id: userId,
+                },
+                include: {
+                    profile: {
+                        include: {
+                            privacySettings: true,
+                            professionalIdentity: true,
+                            profileLinks: {
+                                orderBy: {
+                                    displayOrder: "asc",
+                                },
+                            },
+                            profileInterests: {
+                                include: {
+                                    interest: true,
+                                },
+                            },
+                        },
+                    },
+                    notificationSettings: true,
+                },
+            });
 
         if (!user || !user.profile) {
-            throw new NotFoundException("Account not found.");
+            throw new NotFoundException(
+                "Account not found.",
+            );
         }
 
-        return this.toUserModel(user, user.profile);
+        return this.toMeModel(user);
     }
-
     async logout(sessionId: string, userId: string): Promise<boolean> {
         await this.prisma.session.deleteMany({
             where: { id: sessionId, userId },

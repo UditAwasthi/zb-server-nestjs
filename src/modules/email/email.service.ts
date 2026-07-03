@@ -8,6 +8,7 @@ export class EmailService {
         email: string,
         otp: string
     ): Promise<void> {
+      try{
         const result =
             await resend.emails.send({
                 from: env.EMAIL_FROM,
@@ -82,7 +83,11 @@ export class EmailService {
 </div>
 `,
             });
-
+         console.log("Email sent:", result);
+          }
+          catch (error) {
+            console.error("Error sending email:", error);
+          }
         
     }
 

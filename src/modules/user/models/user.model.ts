@@ -20,6 +20,7 @@ export class UserModel {
   @Field({ nullable: true })
   bio?: string;
 
+
   @Field()
   emailVerified!: boolean;
 

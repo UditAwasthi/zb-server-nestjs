@@ -10,7 +10,7 @@ import { CurrentUser } from "./decorators/current-user.decorator";
 
 import { UserModel } from "../user/models/user.model";
 import { AuthService } from "./auth.service";
-
+import { MeModel } from "../user/models/me.model";
 import { RegisterInput } from "./dto/register.input";
 import { LoginInput } from "./dto/login.input";
 import { AuthPayload } from "./dto/auth-payload.model";
@@ -69,7 +69,7 @@ export class AuthResolver {
   }
   //me
   @UseGuards(JwtAuthGuard)
-  @Query(() => UserModel)
+  @Query(() => MeModel)
   me(
     @CurrentUser() user: CurrentUserPayload,
   ) {
