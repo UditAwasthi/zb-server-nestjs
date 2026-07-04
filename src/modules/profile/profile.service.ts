@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, User, Profile } from '@prisma/client';
-
+import { PublicProfileModel } from "../user/models/public-profile.model";
 import { PrismaService } from '../../database/prisma.service';
 
 import { ProfileModel } from '../user/models/profile.model';
@@ -28,6 +28,7 @@ import { AddProfileLinkInput } from './dto/add-profile-link.input';
 import { UpdateProfileLinkInput } from './dto/update-profile-link.input';
 import { ReorderProfileLinksInput } from './dto/reorder-profile-links.input';
 import { AddInterestInput } from './dto/add-interest.input';
+import { PublicUserModel } from '../user/models/public-user.model';
 
 const MAX_PROFILE_LINKS = 10;
 
@@ -55,7 +56,7 @@ export class ProfileService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly avatarService: AvatarService,
-  ) {}
+  ) { }
 
   private async getProfileIdOrThrow(userId: string): Promise<string> {
     const profile = await this.prisma.profile.findUnique({
@@ -495,5 +496,111 @@ export class ProfileService {
     });
 
     return true;
+  }
+  
+  private toPublicUserModel(
+    user: User & {
+      profile: ProfileWithRelations | null;
+    },
+    profile: ProfileWithRelations,
+    social: {
+    isFollowing: boolean;
+    followsYou: boolean;
+    isBlocked: boolean;
+    hasBlockedYou: boolean;
+  },
+  ): PublicUserModel {
+  return {
+    id: user.id,
+    username: user.username,
+    avatarUrl: user.avatarUrl ?? undefined,
+    createdAt: user.createdAt,
+
+    profile: this.toPublicProfileModel(profile),
+
+    isFollowing: social.isFollowing,
+    followsYou: social.followsYou,
+    isBlocked: social.isBlocked,
+    hasBlockedYou: social.hasBlockedYou,
+  };
+}
+  private toPublicProfileModel(
+  profile: ProfileWithRelations,
+): PublicProfileModel {
+  return {
+    id: profile.id,
+    fullName: profile.fullName,
+    pronouns: profile.pronouns ?? undefined,
+    location: profile.location ?? undefined,
+    bio: profile.bio ?? undefined,
+    accountType: profile.accountType,
+    niche: profile.niche ?? undefined,
+    profileMusicUrl: profile.profileMusicUrl ?? undefined,
+
+    followerCount: profile.followerCount,
+    followingCount: profile.followingCount,
+    postCount: profile.postCount,
+
+    professionalIdentity: profile.professionalIdentity
+      ? this.toProfessionalIdentityModel(
+        profile.professionalIdentity,
+      )
+      : undefined,
+
+    profileLinks: profile.profileLinks,
+
+    profileInterests: profile.profileInterests,
+  };
+}
+  async user(
+  username: string,
+  viewerId ?: string,
+): Promise < PublicUserModel > {
+
+  const user = await this.prisma.user.findUnique({
+    where: {
+      usernameLower: username.toLowerCase(),
+    },
+    include: {
+      profile: {
+        include: {privacySettings: true,
+          professionalIdentity: true,
+          profileLinks: {
+            orderBy: {
+              displayOrder: "asc",
+            },
+          },
+          profileInterests: {
+            include: {
+              interest: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if(!user) {
+    throw new NotFoundException(
+      "User not found.",
+    );
+  }
+
+    if(!user.profile) {
+  throw new NotFoundException(
+    "User profile not found.",
+  );
+}
+
+return this.toPublicUserModel(
+  user,
+  user.profile,
+  {
+    isFollowing: false,
+    followsYou: false,
+    isBlocked: false,
+    hasBlockedYou: false,
+  },
+);
   }
 }

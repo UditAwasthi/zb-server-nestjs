@@ -1,4 +1,4 @@
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Resolver ,Query} from '@nestjs/graphql';
 import { ParseUUIDPipe, UseGuards } from '@nestjs/common';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -24,11 +24,12 @@ import { ReorderProfileLinksInput } from './dto/reorder-profile-links.input';
 import { AddInterestInput } from './dto/add-interest.input';
 import { AvatarUploadUrlResponse } from './dto/avatar-upload-url.model';
 import { UpdateAvatarInput } from './dto/update-avatar.input';
+import { PublicUserModel } from '../user/models/public-user.model';
 
 @UseGuards(JwtAuthGuard)
 @Resolver()
 export class ProfileResolver {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(private readonly profileService: ProfileService) { }
 
   @Mutation(() => ProfileModel)
   updateBasicProfile(
@@ -126,5 +127,13 @@ export class ProfileResolver {
   @Mutation(() => Boolean)
   deleteAvatar(@CurrentUser() user: CurrentUserPayload) {
     return this.profileService.deleteAvatar(user.userId);
+  }
+
+
+  @Query(() => PublicUserModel)
+  async user(
+    @Args("username") username: string,
+  ): Promise<PublicUserModel> {
+    return this.profileService.user(username);
   }
 }

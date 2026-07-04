@@ -200,11 +200,41 @@ enum Pronouns {
   THEY_THEM
 }
 
+type PublicProfileModel {
+  accountType: AccountType!
+  bio: String
+  followerCount: Int!
+  followingCount: Int!
+  fullName: String!
+  id: String!
+  location: String
+  niche: Niche
+  postCount: Int!
+  professionalIdentity: ProfessionalIdentityModel
+  profileInterests: [ProfileInterestModel!]!
+  profileLinks: [ProfileLinkModel!]!
+  profileMusicUrl: String
+  pronouns: Pronouns
+}
+
+type PublicUserModel {
+  avatarUrl: String
+  createdAt: DateTime!
+  followsYou: Boolean!
+  hasBlockedYou: Boolean!
+  id: ID!
+  isBlocked: Boolean!
+  isFollowing: Boolean!
+  profile: PublicProfileModel!
+  username: String!
+}
+
 type Query {
   checkEmailAvailability(email: String!): AvailabilityResponse!
   checkUsernameAvailability(username: String!): AvailabilityResponse!
   hello: String!
   me: MeModel!
+  user(username: String!): PublicUserModel!
 }
 
 input RefreshTokenInput {
